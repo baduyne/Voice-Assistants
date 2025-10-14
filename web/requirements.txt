@@ -1,0 +1,4 @@
+# Core libraries
+langchain
+langchain-ollama
+langchain-community

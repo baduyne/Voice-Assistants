@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Voice Recognition Chat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <h2>Virtual Assistant</h2>
+
+        <!-- Chat messages will appear here -->
+        <div id="chatBox"></div>
+
+        <!-- Control buttons -->
+        <div style="text-align: center; margin-bottom: 10px;">
+            <button id="startBtn">Start Recording</button>
+            <button id="stopBtn" disabled>Stop Recording</button>
+        </div>
+
+        <!-- Status text -->
+        <p id="status">Status: Not started</p>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
