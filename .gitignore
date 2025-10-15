@@ -1,8 +1,10 @@
-./whisper.cpp
-./web/models
-./web/audio
-./web/recordings
-./web/tmp
-./web/tmp_audio
+./whisper.cpp/
+web/models/STT-ggml-model.bin
+web/models/TTS_model.onnx
+./web/audio/
+.web/__pycache__/
+./web/recordings/
+./web/tmp/
+./web/tmp_audio/
 ./web/a.pdf
 ./web/test.ipynb
