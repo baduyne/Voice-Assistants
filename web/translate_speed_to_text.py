@@ -3,7 +3,7 @@ import os
 import uuid
 
 TMP_DIR = "./tmp_audio"
-MODEL_PATH = "../models/ggml-model.bin"
+MODEL_PATH = "./models/STT-ggml-model.bin"
 os.makedirs(TMP_DIR, exist_ok=True)
 
 

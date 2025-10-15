@@ -4,7 +4,7 @@ from langchain.chains import LLMChain
 from langchain_core.prompts import PromptTemplate
 
 config = {
-    "model": "gemma3:1b",
+    "model": "qwen3:1.7b",
     "temperature": 0.7,
     "top_p": 0.9
 }

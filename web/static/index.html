@@ -1,27 +1,100 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Voice Recognition Chat</title>
-    <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8" />
+  <title>🎙️ FastAPI Voice Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #fafafa; }
+    h1 { color: #444; }
+    button { padding: 10px 20px; font-size: 16px; margin-right: 10px; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; }
+    button:disabled { background: #ddd; cursor: not-allowed; }
+    #log { margin-top: 20px; white-space: pre-wrap; background: #f4f4f4; padding: 10px; border-radius: 6px; height: 200px; overflow-y: auto; }
+    audio { display: none; } /* 🔥 Ẩn thanh phát audio */
+  </style>
 </head>
 <body>
-    <div class="chat-container">
-        <h2>Virtual Assistant</h2>
+  <h1>🎧 Voice Assistant (FastAPI + WebSocket)</h1>
+  <p>Bấm <b>Start</b> để ghi âm, <b>Stop</b> để dừng và nghe phản hồi.</p>
 
-        <!-- Chat messages will appear here -->
-        <div id="chatBox"></div>
+  <button id="startBtn">Start</button>
+  <button id="stopBtn" disabled>Stop</button>
+  <audio id="player"></audio> <!-- Không hiện ra -->
 
-        <!-- Control buttons -->
-        <div style="text-align: center; margin-bottom: 10px;">
-            <button id="startBtn">Start Recording</button>
-            <button id="stopBtn" disabled>Stop Recording</button>
-        </div>
+  <div id="log"></div>
 
-        <!-- Status text -->
-        <p id="status">Status: Not started</p>
-    </div>
+  <script>
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const player = document.getElementById('player');
+    const logEl = document.getElementById('log');
 
-    <script src="/static/app.js"></script>
+    let ws, mediaRecorder;
+
+    function log(msg) {
+      logEl.textContent += msg + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    startBtn.addEventListener('click', async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const clientId = Math.random().toString(36).slice(2, 10);
+      ws = new WebSocket(`ws://${location.host}/ws/${clientId}`);
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = () => {
+        log("✅ WebSocket connected");
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+            e.data.arrayBuffer().then(buf => ws.send(buf));
+          }
+        };
+        mediaRecorder.start(500);
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        log("🎙️ Recording...");
+      };
+
+      ws.onmessage = (ev) => {
+        try {
+          const data = JSON.parse(ev.data);
+          if (data.status === "done") {
+            log("🧠 Bot reply: " + data.text);
+            player.src = data.tts_url + "?t=" + Date.now();
+            player.play().then(() => {
+              log("🎵 Playing audio (hidden)...");
+            });
+          }
+        } catch {
+          console.warn("Non-JSON message:", ev.data);
+        }
+      };
+
+      ws.onclose = () => {
+        log("❌ WebSocket closed");
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+      };
+    });
+
+    stopBtn.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        log("🛑 Recording stopped");
+      }
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: "finish" }));
+        log("📤 Sent finish signal, waiting for bot reply...");
+      }
+      stopBtn.disabled = true;
+    });
+
+    // ✅ Khi audio phát xong → mở lại Start
+    player.addEventListener('ended', () => {
+      log("✅ Audio playback finished. Ready for next input.");
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    });
+  </script>
 </body>
 </html>

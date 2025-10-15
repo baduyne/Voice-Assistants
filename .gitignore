@@ -1,2 +1,8 @@
 ./whisper.cpp
 ./web/models
+./web/audio
+./web/recordings
+./web/tmp
+./web/tmp_audio
+./web/a.pdf
+./web/test.ipynb
