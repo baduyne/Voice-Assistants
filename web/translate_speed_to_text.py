@@ -3,7 +3,7 @@ import os
 import uuid
 
 TMP_DIR = "./tmp_audio"
-MODEL_PATH = "./models/ggml-base.en.bin"
+MODEL_PATH = "../models/ggml-model.bin"
 os.makedirs(TMP_DIR, exist_ok=True)
 
 
@@ -28,7 +28,7 @@ def process_audio(file_path: str) -> str:
                 "../whisper.cpp/build/bin/whisper-cli",
                 "-m", MODEL_PATH,
                 "-f", wav_filename,
-                "-l", "vi",
+                "-l", "vi", 
                 "-otxt"
             ],
             capture_output=True, text=True, check=True
