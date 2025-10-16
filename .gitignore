@@ -10,3 +10,7 @@ web/models/TTS_model.onnx
 ./web/a.pdf
 ./web/test.ipynb
 .vscode
+web/.env
+web/chroma_langchain_db/
+web/audio/
+web/chroma_db/
