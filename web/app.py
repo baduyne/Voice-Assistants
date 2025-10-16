@@ -8,7 +8,7 @@ import hashlib
 
 # Import pipeline modules
 from translate_speed_to_text import process_audio   # STT
-from get_answers import *
+from get_answers import get_response
 from tts import text_to_speech                      # TTS
 
 app = FastAPI()
@@ -30,7 +30,6 @@ tts_model_name = "./models/TTS_model.onnx"
 @app.get("/")
 async def root():
     return FileResponse("static/index.html")
-
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
@@ -71,11 +70,11 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
                     print(" STT:", text_output)
 
                     # Lấy phản hồi (nếu có chatbot)
-                    bot_reply = text_output  # hoặc gọi get_answer(text_output)
+                    bot_reply = get_response(text_output)  # hoặc gọi get_answer(text_output)
 
                     # Text → Speech (TTS)
-                    text_hash = hashlib.sha1((bot_reply + "normal").encode("utf-8")).hexdigest()
-                    audio_path = text_to_speech(bot_reply, "normal", tts_model_name, text_hash)
+                    text_hash = hashlib.sha1((bot_reply + "fast").encode("utf-8")).hexdigest()
+                    audio_path = text_to_speech(bot_reply, "fast", tts_model_name, text_hash)
 
                     # Trả kết quả về client
                     tts_url = f"/audio/{os.path.basename(audio_path)}"

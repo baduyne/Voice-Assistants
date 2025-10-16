@@ -2,38 +2,121 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🎙️ FastAPI Voice Chat</title>
+  <title>🎙️ Voice Assistant</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; background: #fafafa; }
-    h1 { color: #444; }
-    button { padding: 10px 20px; font-size: 16px; margin-right: 10px; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; }
-    button:disabled { background: #ddd; cursor: not-allowed; }
-    #log { margin-top: 20px; white-space: pre-wrap; background: #f4f4f4; padding: 10px; border-radius: 6px; height: 200px; overflow-y: auto; }
-    audio { display: none; } /* 🔥 Ẩn thanh phát audio */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f6f6f6;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    h1 {
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mic {
+      font-size: 36px;
+      color: #555;
+    }
+
+    .btns {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+    }
+
+    button {
+      padding: 14px 32px;
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    #startBtn {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    #stopBtn {
+      background-color: #f44336;
+      color: white;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    button.active {
+      transform: scale(1.1);
+      filter: brightness(1.2);
+    }
+
+    /* 🎵 Hiệu ứng sóng âm thanh */
+    .wave {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 4px;
+      height: 40px;
+      margin-top: 50px;
+      visibility: hidden;
+    }
+
+    .bar {
+      width: 6px;
+      height: 10px;
+      background: #4caf50;
+      border-radius: 3px;
+      animation: bounce 1s infinite ease-in-out;
+    }
+
+    .bar:nth-child(2) { animation-delay: 0.1s; }
+    .bar:nth-child(3) { animation-delay: 0.2s; }
+    .bar:nth-child(4) { animation-delay: 0.3s; }
+    .bar:nth-child(5) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 100% { height: 10px; background: #4caf50; }
+      50% { height: 40px; background: #81c784; }
+    }
   </style>
 </head>
 <body>
-  <h1>🎧 Voice Assistant (FastAPI + WebSocket)</h1>
-  <p>Bấm <b>Start</b> để ghi âm, <b>Stop</b> để dừng và nghe phản hồi.</p>
+  <h1><span class="mic">🎤</span>Voice Assistant</h1>
 
-  <button id="startBtn">Start</button>
-  <button id="stopBtn" disabled>Stop</button>
-  <audio id="player"></audio> <!-- Không hiện ra -->
+  <div class="btns">
+    <button id="startBtn">Start</button>
+    <button id="stopBtn" disabled>Stop</button>
+  </div>
 
-  <div id="log"></div>
+  <div class="wave" id="wave">
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+    <div class="bar"></div>
+  </div>
+
+  <audio id="player"></audio>
 
   <script>
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
     const player = document.getElementById('player');
-    const logEl = document.getElementById('log');
-
+    const wave = document.getElementById('wave');
     let ws, mediaRecorder;
-
-    function log(msg) {
-      logEl.textContent += msg + '\n';
-      logEl.scrollTop = logEl.scrollHeight;
-    }
 
     startBtn.addEventListener('click', async () => {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -42,9 +125,8 @@
       ws.binaryType = "arraybuffer";
 
       ws.onopen = () => {
-        log("✅ WebSocket connected");
         mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = (e) => {
+        mediaRecorder.ondataavailable = e => {
           if (e.data.size > 0 && ws.readyState === WebSocket.OPEN) {
             e.data.arrayBuffer().then(buf => ws.send(buf));
           }
@@ -52,48 +134,44 @@
         mediaRecorder.start(500);
         startBtn.disabled = true;
         stopBtn.disabled = false;
-        log("🎙️ Recording...");
+        startBtn.classList.add('active');
+        wave.style.visibility = 'visible';
       };
 
-      ws.onmessage = (ev) => {
+      ws.onmessage = ev => {
         try {
           const data = JSON.parse(ev.data);
           if (data.status === "done") {
-            log("🧠 Bot reply: " + data.text);
             player.src = data.tts_url + "?t=" + Date.now();
-            player.play().then(() => {
-              log("🎵 Playing audio (hidden)...");
-            });
+            player.play();
           }
-        } catch {
-          console.warn("Non-JSON message:", ev.data);
-        }
+        } catch {}
       };
 
       ws.onclose = () => {
-        log("❌ WebSocket closed");
         startBtn.disabled = false;
         stopBtn.disabled = true;
+        startBtn.classList.remove('active');
+        wave.style.visibility = 'hidden';
       };
     });
 
     stopBtn.addEventListener('click', () => {
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
-        log("🛑 Recording stopped");
       }
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "finish" }));
-        log("📤 Sent finish signal, waiting for bot reply...");
       }
-      stopBtn.disabled = true;
+      stopBtn.classList.add('active');
+      setTimeout(() => stopBtn.classList.remove('active'), 300);
     });
 
-    // ✅ Khi audio phát xong → mở lại Start
     player.addEventListener('ended', () => {
-      log("✅ Audio playback finished. Ready for next input.");
+      wave.style.visibility = 'hidden';
       startBtn.disabled = false;
       stopBtn.disabled = true;
+      startBtn.classList.remove('active');
     });
   </script>
 </body>
